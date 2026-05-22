@@ -1,174 +1,210 @@
-//
-const express = require("express");
-const cors = require("cors");
-const env = require("dotenv");
-const app = express();
+const API =
+process.env
+.NEXT_PUBLIC_API_URL
+?.replace(/\/$/, "");
 
-env.config();
-const port = process.env.PORT;
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
-app.use(express.json());
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri = process.env.MONGO_URI;
+// ALL PETS
+export const AllUser = async (
+  search = "",
+  species = ""
+) => {
 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
+  const res =
+    await fetch(
 
-async function run() {
-  try {
-    // await client.connect();
+`${API}/pets?search=${search}&species=${species}`,
 
-    const db = await client.db("petadaption");
-    const CollectionDb = await db.collection("usersCollection");
-
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
+      {
+        cache: "no-store",
+      }
     );
 
-    app.get("/pets", async (req, res) => {
-      const search = req.query.search || "";
+  return await res.json();
+};
 
-      const species = req.query.species || "";
+// SINGLE PET
+export const OneUserId =
+async (id) => {
 
-      let query = {};
+  const res =
+    await fetch(
 
-      // SEARCH BY NAME
-      if (search) {
-        query.petName = {
-          $regex: search,
+`${API}/pets/${id}`,
 
-          $options: "i",
-        };
+      {
+        cache: "no-store",
       }
-
-      // FILTER BY SPECIES
-      if (species) {
-        query.species = {
-          $in: [species],
-        };
-      }
-
-      const result = await CollectionDb.find(query).toArray();
-
-      res.send(result);
-    });
-
-    app.get("/pets/:id", async (req, res) => {
-      const { id } = req.params;
-
-      const result = await CollectionDb.findOne({ _id: new ObjectId(id) });
-
-      res.send(result);
-    });
-
-    app.post("/pets-add", async (req, res) => {
-      const data = req.body;
-      const result = await CollectionDb.insertOne(data);
-
-      res.send(result);
-    });
-
-    app.get("/pet/:id", async (req, res) => {
-      const { id } = req.params;
-
-      const result = await CollectionDb.find({
-        userId: id,
-      }).toArray();
-
-      res.send(result);
-    });
-
-    app.delete("/delete-pat/:id", async (req, res) => {
-      const { id } = req.params;
-
-      const result = await CollectionDb.deleteOne({ _id: new ObjectId(id) });
-
-      res.send(result);
-    });
-
-    app.put("/update-pet/:id", async (req, res) => {
-      const data = req.body;
-
-      const { id } = req.params;
-
-      const result = await CollectionDb.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: data },
-      );
-
-      res.send(result);
-    });
-
-    app.post("/request-pet", async (req, res) => {
-      const data = req.body;
-
-      const result = await CollectionDb.insertOne(data);
-      res.send(result);
-    });
-
-    app.get(
-      "/my-request/:id",
-
-      async (req, res) => {
-        const { id } = req.params;
-
-        const result = await CollectionDb.find({
-          userId: id,
-
-          status: "Pending",
-        }).toArray();
-
-        res.send(result);
-      },
     );
-    app.put("/request-status/:id", async (req, res) => {
-      const { id } = req.params;
-      const data = req.body;
 
-      const result = await CollectionDb.updateOne(
-        { _id: new ObjectId(id) },
+  return await res.json();
+};
 
-        {
-          $set: {
-            status: data.status,
-          },
+// ADD PET
+export const catAdd =
+async (data) => {
+
+  const res =
+    await fetch(
+
+`${API}/pets-add`,
+
+      {
+        method: "POST",
+
+        headers: {
+          "content-type":
+            "application/json",
         },
-      );
 
-      res.send(result);
-    });
-
-    app.get(
-      "/request-pet/:id",
-
-      async (req, res) => {
-        const { id } = req.params;
-
-        const result = await CollectionDb.find({
-          petId: id,
-        }).toArray();
-
-        res.send(result);
-      },
+        body:
+          JSON.stringify(data),
+      }
     );
-  } finally {
-    // await client.close();
-  }
-}
-run().catch(console.dir);
 
-app.get("/", (req, res) => {
-  res.send("hello");
-});
+  return await res.json();
+};
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+// MY PETS
+export const PetAddUser =
+async (id) => {
+
+  const res =
+    await fetch(
+
+`${API}/pet/${id}`,
+
+      {
+        cache: "no-store",
+      }
+    );
+
+  return await res.json();
+};
+
+// DELETE PET
+export const HandelDelete =
+async (id) => {
+
+  const res =
+    await fetch(
+
+`${API}/delete-pat/${id}`,
+
+      {
+        method: "DELETE",
+      }
+    );
+
+  return await res.json();
+};
+
+// UPDATE PET
+export const HandelUpdate =
+async (id, data) => {
+
+  const res =
+    await fetch(
+
+`${API}/update-pet/${id}`,
+
+      {
+        method: "PUT",
+
+        headers: {
+          "content-type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(data),
+      }
+    );
+
+  return await res.json();
+};
+
+// REQUEST PET
+export const RequestPetData =
+async (data) => {
+
+  const res =
+    await fetch(
+
+`${API}/request-pet`,
+
+      {
+        method: "POST",
+
+        headers: {
+          "content-type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(data),
+      }
+    );
+
+  return await res.json();
+};
+
+// GET REQUEST
+export const RequestData =
+async (id) => {
+
+  const res =
+    await fetch(
+
+`${API}/request-pet/${id}`,
+
+      {
+        cache: "no-store",
+      }
+    );
+
+  return await res.json();
+};
+
+// UPDATE REQUEST STATUS
+export const UpdateStatus =
+async (id, status) => {
+
+  const res =
+    await fetch(
+
+`${API}/request-status/${id}`,
+
+      {
+        method: "PUT",
+
+        headers: {
+          "content-type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify({
+            status,
+          }),
+      }
+    );
+
+  return await res.json();
+};
+
+// MY REQUESTS
+export const MyRequestData =
+async (id) => {
+
+  const res =
+    await fetch(
+
+`${API}/my-request/${id}`,
+
+      {
+        cache: "no-store",
+      }
+    );
+
+  return await res.json();
+};
