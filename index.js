@@ -12,17 +12,7 @@ env.config();
 
 const port = process.env.PORT;
 
-app.use(cors({
-
-  origin: [
-
-    "http://localhost:3000",
-
-    "https://petadeption.vercel.app",
-  ],
-
-  credentials: true,
-}));
+app.use(cors());
 
 app.use(express.json());
 
@@ -41,7 +31,7 @@ const verifyToken =
       .send({
 
         message:
-          "Unauthorized Access",
+          "Unauthorized Access please try again",
       });
   }
 
