@@ -6,7 +6,13 @@ const app = express();
 
 env.config();
 const port = process.env.PORT;
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://petadeption.vercel.app"
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGO_URI;
@@ -21,7 +27,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const db = await client.db("petadaption");
     const CollectionDb = await db.collection("usersCollection");
@@ -111,25 +117,21 @@ async function run() {
       res.send(result);
     });
 
-app.get(
-"/my-request/:id",
+    app.get(
+      "/my-request/:id",
 
-async (req, res) => {
+      async (req, res) => {
+        const { id } = req.params;
 
-  const { id } =
-    req.params;
+        const result = await CollectionDb.find({
+          userId: id,
 
-  const result =
-    await CollectionDb.find({
+          status: "Pending",
+        }).toArray();
 
-      userId: id,
-
-      status: "Pending",
-
-    }).toArray();
-
-  res.send(result);
-});
+        res.send(result);
+      },
+    );
     app.put("/request-status/:id", async (req, res) => {
       const { id } = req.params;
       const data = req.body;
