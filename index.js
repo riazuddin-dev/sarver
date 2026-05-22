@@ -7,10 +7,7 @@ const app = express();
 env.config();
 const port = process.env.PORT;
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://petadeption.vercel.app"
-  ],
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
