@@ -1,10 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const env = require("dotenv");
-const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
-
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 
@@ -16,50 +12,12 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use(cookieParser());
+const {
+  MongoClient,
+  ServerApiVersion,
+  ObjectId,
 
-const verifyToken =
-(req, res, next) => {
-
-  const token =
-    req.cookies.token;
-
-  if (!token) {
-
-    return res
-      .status(401)
-      .send({
-
-        message:
-          "Unauthorized Access please try again",
-      });
-  }
-
-  jwt.verify(
-
-    token,
-
-    process.env.JWT_SECRET,
-
-    (err, decoded) => {
-
-      if (err) {
-
-        return res
-          .status(401)
-          .send({
-
-            message:
-              "Unauthorized Access",
-          });
-      }
-
-      req.user = decoded;
-
-      next();
-    }
-  );
-};
+} = require("mongodb");
 
 const uri =
 process.env.MONGO_URI;
@@ -70,73 +28,56 @@ new MongoClient(uri, {
   serverApi: {
 
     version:
-      ServerApiVersion.v1,
+    ServerApiVersion.v1,
 
-    strict: true,
+    strict:
+    true,
 
-    deprecationErrors: true,
+    deprecationErrors:
+    true,
   },
 });
+
+// VERIFY MIDDLEWARE
+const verify =
+(req,res,next)=>{
+
+  const token =
+  req.headers.authorization;
+
+  if(!token){
+
+    return res
+    .status(401)
+    .send({
+
+      message:
+      "Unauthorized",
+    });
+  }
+
+  next();
+};
 
 async function run() {
 
   try {
 
     const db =
-      client.db("petadaption");
-
-    const petsCollection =
-      db.collection("pets");
-
-    const requestCollection =
-      db.collection("requests");
-
-    app.post(
-
-      "/jwt",
-
-      async (req, res) => {
-
-        const user =
-          req.body;
-
-        const token =
-          jwt.sign(
-
-            user,
-
-            process.env.JWT_SECRET,
-
-            {
-              expiresIn:
-                "7d",
-            }
-          );
-
-        res
-          .cookie(
-
-            "token",
-
-            token,
-
-            {
-
-              httpOnly: true,
-
-              secure: true,
-
-              sameSite: "none",
-            }
-          )
-
-          .send({
-
-            success: true,
-          });
-      }
+    await client.db(
+      "petadaption"
     );
 
+    const CollectionDb =
+    await db.collection(
+      "usersCollection"
+    );
+
+    console.log(
+      "MongoDB Connected"
+    );
+
+    // ALL PETS
     app.get(
 
       "/pets",
@@ -144,10 +85,10 @@ async function run() {
       async (req, res) => {
 
         const search =
-          req.query.search || "";
+        req.query.search || "";
 
         const species =
-          req.query.species || "";
+        req.query.species || "";
 
         let query = {};
 
@@ -156,254 +97,270 @@ async function run() {
           query.petName = {
 
             $regex:
-              search,
+            search,
 
             $options:
-              "i",
+            "i",
           };
         }
 
         if (species) {
 
-          query.species = species;
+          query.species = {
+
+            $in:
+            [species],
+          };
         }
 
         const result =
-          await petsCollection
-            .find(query)
-            .toArray();
+        await CollectionDb
+        .find(query)
+        .toArray();
 
         res.send(result);
       }
     );
 
+    // SINGLE PET
     app.get(
 
       "/pets/:id",
 
+      verify,
+
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await petsCollection
-            .findOne({
+        await CollectionDb
+        .findOne({
 
-              _id:
-                new ObjectId(id),
-            });
+          _id:
+          new ObjectId(id),
+        });
 
         res.send(result);
       }
     );
 
+    // ADD PET
     app.post(
 
       "/pets-add",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const data =
-          req.body;
+        req.body;
 
         const result =
-          await petsCollection
-            .insertOne(data);
+        await CollectionDb
+        .insertOne(data);
 
         res.send(result);
       }
     );
 
+    // MY PETS
     app.get(
 
       "/pet/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await petsCollection
-            .find({
+        await CollectionDb
+        .find({
 
-              userId: id,
-            })
-            .toArray();
+          userId: id,
+        })
+
+        .toArray();
 
         res.send(result);
       }
     );
 
+    // DELETE PET
     app.delete(
 
       "/delete-pat/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await petsCollection
-            .deleteOne({
+        await CollectionDb
+        .deleteOne({
 
-              _id:
-                new ObjectId(id),
-            });
+          _id:
+          new ObjectId(id),
+        });
 
         res.send(result);
       }
     );
 
+    // UPDATE PET
     app.put(
 
       "/update-pet/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const data =
-          req.body;
+        req.body;
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await petsCollection
-            .updateOne(
+        await CollectionDb
+        .updateOne(
 
-              {
-                _id:
-                  new ObjectId(id),
-              },
+          {
+            _id:
+            new ObjectId(id),
+          },
 
-              {
-                $set: data,
-              }
-            );
+          {
+            $set:
+            data,
+          }
+        );
 
         res.send(result);
       }
     );
 
+    // REQUEST PET
     app.post(
 
       "/request-pet",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const data =
-          req.body;
+        req.body;
 
         const result =
-          await requestCollection
-            .insertOne(data);
+        await CollectionDb
+        .insertOne(data);
 
         res.send(result);
       }
     );
 
+    // MY REQUEST
     app.get(
 
       "/my-request/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await requestCollection
-            .find({
+        await CollectionDb
+        .find({
 
-              userId: id,
+          userId: id,
 
-              status:
-                "Pending",
-            })
-            .toArray();
+          status:
+          "Pending",
+        })
+
+        .toArray();
 
         res.send(result);
       }
     );
 
+    // UPDATE STATUS
     app.put(
 
       "/request-status/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const data =
-          req.body;
+        req.body;
 
         const result =
-          await requestCollection
-            .updateOne(
+        await CollectionDb
+        .updateOne(
 
-              {
-                _id:
-                  new ObjectId(id),
-              },
+          {
+            _id:
+            new ObjectId(id),
+          },
 
-              {
-                $set: {
+          {
+            $set: {
 
-                  status:
-                    data.status,
-                },
-              }
-            );
+              status:
+              data.status,
+            },
+          }
+        );
 
         res.send(result);
       }
     );
 
+    // REQUEST PET DATA
     app.get(
 
       "/request-pet/:id",
 
-      verifyToken,
+      verify,
 
       async (req, res) => {
 
         const { id } =
-          req.params;
+        req.params;
 
         const result =
-          await requestCollection
-            .find({
+        await CollectionDb
+        .find({
 
-              petId: id,
-            })
-            .toArray();
+          petId: id,
+        })
+
+        .toArray();
 
         res.send(result);
       }
     );
 
-    console.log(
-      "MongoDB Connected"
-    );
-
   } finally {
+
   }
 }
 
@@ -417,6 +374,6 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
 
   console.log(
-    `Server Running On ${port}`
+`Server Running On ${port}`
   );
 });
