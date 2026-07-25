@@ -8,7 +8,15 @@ env.config();
 
 const port = process.env.PORT;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://petadeption.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -367,8 +375,15 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
+  res.send({
+    ok: true,
+    service: "PawHaven API",
+    message: "Server is running",
+  });
+});
 
-  res.send("hello");
+app.get("/health", (req, res) => {
+  res.send({ status: "ok" });
 });
 
 app.listen(port, () => {
